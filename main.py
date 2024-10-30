@@ -1,8 +1,9 @@
 import telebot
 import os
 import requests
+from bs4 import BeautifulSoup
 
-API_TOKEN = '7297098002:AAGaCltHCKy-9PCZEiBDeyKW7nm4lw0oT6U'  # Directly assign the API token
+API_TOKEN = '7297098002:AAGaCltHCKy-9PCZEiBDeyKW7nm4lw0oT6U'  # Replace with your actual API token
 bot = telebot.TeleBot(API_TOKEN)
 
 @bot.message_handler(commands=['start'])
@@ -23,14 +24,25 @@ def login(message):
         bot.send_message(message.chat.id, "Login failed. Please check your credentials.")
 
 def get_user_cards(message, session):
-    cards_url = 'https://subway.com/api/cards'  # Hypothetical endpoint to get user cards
+    cards_url = 'https://www.subway.com/en-us/profile/paymentmethods'  # Updated URL
     response = session.get(cards_url)
     
     if response.status_code == 200:
-        cards = response.json()
-        card_list = "\n".join([f"{card['type']} ending in {card['last4']}" for card in cards])
-        bot.send_message(message.chat.id, f"Your saved cards:\n{card_list}\nPlease enter your food order.")
-        bot.register_next_step_handler(message, order_food, session)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        cards = []  # List to hold card information
+        
+        # Assuming the cards are in a specific HTML structure
+        for card in soup.find_all('div', class_='card-info'):  # Adjust class name as necessary
+            card_type = card.find('span', class_='card-type').text  # Adjust selector as necessary
+            last4 = card.find('span', class_='last4').text  # Adjust selector as necessary
+            cards.append({'type': card_type, 'last4': last4})
+        
+        if cards:
+            card_list = "\n".join([f"{card['type']} ending in {card['last4']}" for card in cards])
+            bot.send_message(message.chat.id, f"Your saved cards:\n{card_list}\nPlease enter your food order.")
+            bot.register_next_step_handler(message, order_food, session)
+        else:
+            bot.send_message(message.chat.id, "No saved cards found.")
     else:
         bot.send_message(message.chat.id, "Could not retrieve your cards.")
 
