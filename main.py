@@ -2,7 +2,7 @@ import telebot
 import os
 import requests
 
-API_TOKEN = os.getenv('7297098002:AAFEsskPhNfsyAVvzCUQ8r2hCV9OofRbPEE')  # Use environment variable for security
+API_TOKEN = os.getenv('7297098002:AAGaCltHCKy-9PCZEiBDeyKW7nm4lw0oT6U')  # Use environment variable for security
 bot = telebot.TeleBot(API_TOKEN)
 
 @bot.message_handler(commands=['start'])
