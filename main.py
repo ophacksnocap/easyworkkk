@@ -1,54 +1,50 @@
-# Telegram Bot Script for Ticket Transfer
-import telegram
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
+import telebot
+from getpass import getpass
 import requests
 
-# Function to log into Ticketmaster and transfer tickets
-def transfer_tickets(email, password, recipient_email):
-    # Placeholder for Ticketmaster login and ticket transfer logic
-    login_url = "https://www.ticketmaster.com/login"
-    transfer_url = "https://www.ticketmaster.com/transfer"
+API_TOKEN = '7297098002:AAFEsskPhNfsyAVvzCUQ8r2hCV9OofRbPEE'
+bot = telebot.TeleBot(API_TOKEN)
 
-    # Simulate login
+@bot.message_handler(commands=['start'])
+def start(message):
+    bot.send_message(message.chat.id, "Welcome to the Subway Order Bot! Please enter your email and password in the format: email:password")
+
+@bot.message_handler(func=lambda message: ':' in message.text)
+def login(message):
+    email, password = message.text.split(':')
+    # Simulate login to Subway
     session = requests.Session()
-    payload = {'email': email, 'password': password}
-    session.post(login_url, data=payload)
+    login_url = 'https://subway.com/api/login'
+    response = session.post(login_url, json={'email': email, 'password': password})
+    
+    if response.status_code == 200:
+        bot.send_message(message.chat.id, "Login successful! Please enter your food order.")
+        bot.register_next_step_handler(message, order_food, session)
+    else:
+        bot.send_message(message.chat.id, "Login failed. Please check your credentials.")
 
-    # Simulate ticket transfer
-    transfer_payload = {'recipient_email': recipient_email}
-    response = session.post(transfer_url, data=transfer_payload)
+def order_food(message, session):
+    food_order = message.text
+    bot.send_message(message.chat.id, "Please enter your delivery address.")
+    bot.register_next_step_handler(message, delivery_address, session, food_order)
 
-    return response.status_code
+def delivery_address(message, session, food_order):
+    address = message.text
+    card_type = 'Visa'  # Example card type
+    card_number = '0000' if card_type in ['Visa', 'MasterCard'] else '0000'
+    
+    order_url = 'https://subway.com/api/order'
+    order_data = {
+        'food_order': food_order,
+        'delivery_address': address,
+        'card_number': card_number
+    }
+    
+    response = session.post(order_url, json=order_data)
+    
+    if response.status_code == 200:
+        bot.send_message(message.chat.id, "Your order has been placed successfully!")
+    else:
+        bot.send_message(message.chat.id, "There was an error placing your order.")
 
-# Command to start the bot
-def start(update, context):
-    update.message.reply_text('Welcome! Please send your email:password and the recipient email.')
-
-# Function to handle messages
-async def start(update, context):
-    await update.message.reply_text('Welcome! Please send your email:password and the recipient email.')
-
-# Function to handle messages
-async def handle_message(update, context):
-    try:
-        email_password, recipient_email = update.message.text.split(';')
-        email, password = email_password.split(':')
-        status_code = transfer_tickets(email, password, recipient_email)
-
-        if status_code == 200:
-            await update.message.reply_text('Tickets transferred successfully!')
-        else:
-            await update.message.reply_text('Failed to transfer tickets. Please check your credentials.')
-    except Exception as e:
-        await update.message.reply_text('Error: ' + str(e))
-
-
-# Main function to run the bot
-def main():
-    application = Application.builder().token('7297098002:AAFEsskPhNfsyAVvzCUQ8r2hCV9OofRbPEE').build()
-    application.add_handler(CommandHandler('start', start))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    application.run_polling()
-
-if __name__ == '__main__':
-    main()
+bot.polling()
