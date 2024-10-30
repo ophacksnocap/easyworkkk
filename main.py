@@ -40,7 +40,7 @@ def handle_message(update, context):
 
 # Main function to run the bot
 def main():
-    application = Application.builder().token('TOKEN').build()
+    application = Application.builder().token('7297098002:AAFEsskPhNfsyAVvzCUQ8r2hCV9OofRbPEE').build()
     application.add_handler(CommandHandler('start', start))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.run_polling()
