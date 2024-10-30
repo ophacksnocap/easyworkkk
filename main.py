@@ -39,9 +39,11 @@ def handle_message(update, context):
         update.message.reply_text('Error: ' + str(e))
 
 # Main function to run the bot
-application = Application.builder().token('TOKEN').build()
-application.add_handler(CommandHandler('start', start_callback))
-application.run_polling()
+def main():
+    application = Application.builder().token('TOKEN').build()
+    application.add_handler(CommandHandler('start', start))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    application.run_polling()
 
 if __name__ == '__main__':
     main()
