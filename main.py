@@ -14,7 +14,7 @@ def start(message):
 def login(message):
     email, password = message.text.split(':')
     session = requests.Session()
-    login_url = 'https://id.subway.com/02d64b66-5494-461d-8e0d-5c72dc1efa7f/oauth2/v2.0/authorize?p=b2c_1a_signup_signin-r2&ui_locales=en-US&sessionid=07207926a3bd46848ef651f87b3234d9&client_id=502546f5-a6d5-48ed-be47-6c7a5c984770&redirect_uri=https%3A%2F%2Fwww.subway.com%2F&response_type=code%20id_token&scope=openid&state=OpenIdConnect.AuthenticationProperties%3Ddqu634nOzhDUZBNZJmMKT6bMJu8ooxuRkPrHs7bgztnvQoeODFMl5MvuP4TdibupaaVtlXdtMKX56M7R_j8tsrCWKvwX5OzOY8A5my2JBP_5oDSQ37Gy8UMbvnYvkWaF1aX_q0b1teTR7PWy92x9DeOF_S3dQXjFrN8w4d_ndVXWQNeGuibmqfQSe8zH0mbCYSaI1YYixEHdrMVuUkUguLEzTsH8LYwWShVr8NPUsHdCVl5s2IaZ1Ft_HcpLLVYHB_wostTEipz3eqeVNwTZUTCoo3B7PFUrnt1YxOo20SNac25pLWJbTbwDlGxEoGqiOJQ5s_9bzfH8x7AlAZ1nYMo8FNVge2_5eyoA2rJMc4d51_JCCKvYnLnscgmvCuMHKgnI95Sj_OPSiQ9TM3ssCZFOdAHj31b-Zu989oIpE4Id_2i_BC27lO_ajQ9db_8g2dbAWGHpKIyNUR_y4amKS9uDmDE&response_mode=form_post&nonce=638659225052233090.NTVmYWFhMGItZjAwOS00NzJmLWIyZGYtMjQ2OTcxZjEzZTgxZDVmZTc0YzQtNTljYy00YTZiLWExODktNGQ3NDRlNDc4ZjEz&x-client-SKU=ID_NET461&x-client-ver=5.3.0.0'
+    login_url = 'https://www.subway.com/en-us/auth/signin?url=/en-us'
     response = session.post(login_url, json={'email': email, 'password': password})
     
     if response.status_code == 200:
