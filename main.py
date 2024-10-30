@@ -1,6 +1,6 @@
 # Telegram Bot Script for Ticket Transfer
 import telegram
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext import Filters
 import requests
 
 # Function to log into Ticketmaster and transfer tickets
