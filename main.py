@@ -25,18 +25,23 @@ def start(update, context):
     update.message.reply_text('Welcome! Please send your email:password and the recipient email.')
 
 # Function to handle messages
-def handle_message(update, context):
+async def start(update, context):
+    await update.message.reply_text('Welcome! Please send your email:password and the recipient email.')
+
+# Function to handle messages
+async def handle_message(update, context):
     try:
         email_password, recipient_email = update.message.text.split(';')
         email, password = email_password.split(':')
         status_code = transfer_tickets(email, password, recipient_email)
 
         if status_code == 200:
-            update.message.reply_text('Tickets transferred successfully!')
+            await update.message.reply_text('Tickets transferred successfully!')
         else:
-            update.message.reply_text('Failed to transfer tickets. Please check your credentials.')
+            await update.message.reply_text('Failed to transfer tickets. Please check your credentials.')
     except Exception as e:
-        update.message.reply_text('Error: ' + str(e))
+        await update.message.reply_text('Error: ' + str(e))
+
 
 # Main function to run the bot
 def main():
