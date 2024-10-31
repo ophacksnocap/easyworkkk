@@ -1,7 +1,7 @@
 # Telegram Bot for Ticketmaster Account Management
 
 import telegram
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext, Updater  # Added Updater import
 import requests
 
 TOKEN = '7297098002:AAGaCltHCKy-9PCZEiBDeyKW7nm4lw0oT6U'
@@ -72,7 +72,7 @@ def main():
     dp = updater.dispatcher
     
     dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, login))
+    dp.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, login))  # Updated filters usage
     dp.add_handler(CommandHandler("check", check_tickets))
     dp.add_handler(CommandHandler("logout", logout))
     dp.add_handler(CommandHandler("transfer", transfer_tickets))
