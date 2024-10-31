@@ -1,80 +1,86 @@
-import telebot
-import os
+# Telegram Bot Script for Ticket Transfer
+
+import telegram
+from telegram.ext import Updater, CommandHandler, MessageHandler, filters
 import requests
-from bs4 import BeautifulSoup
 
-API_TOKEN = '7297098002:AAGaCltHCKy-9PCZEiBDeyKW7nm4lw0oT6U'  # Replace with your actual API token
-bot = telebot.TeleBot(API_TOKEN)
+# Function to log into Ticketmaster and retrieve tickets
+def get_tickets(email, password):
+    # Placeholder for Ticketmaster login and ticket retrieval logic
+    login_url = "https://www.ticketmaster.com/login"
+    tickets_url = "https://www.ticketmaster.com/my-tickets"
 
-@bot.message_handler(commands=['start'])
-def start(message):
-    bot.send_message(message.chat.id, "Welcome to the Subway Order Bot! Please enter your email and password in the format: email:password")
-
-@bot.message_handler(func=lambda message: ':' in message.text)
-def login(message):
-    email, password = message.text.split(':')
+    # Simulate login
     session = requests.Session()
-    login_url = 'https://www.subway.com/en-us/auth/signin?url=/en-us'
-    response = session.post(login_url, json={'email': email, 'password': password})
-    
+    payload = {'email': email, 'password': password}
+    session.post(login_url, data=payload)
+
+    # Simulate ticket retrieval
+    response = session.get(tickets_url)
     if response.status_code == 200:
-        bot.send_message(message.chat.id, "Login successful! Retrieving your saved cards...")
-        get_user_cards(message, session)
+        # Assuming the response contains a list of tickets
+        return response.json()  # This should return a list of tickets
     else:
-        bot.send_message(message.chat.id, "Login failed. Please check your credentials.")
+        return None
 
-def get_user_cards(message, session):
-    cards_url = 'https://www.subway.com/en-us/profile/paymentmethods'  # Updated URL
-    response = session.get(cards_url)
-    
-    if response.status_code == 200:
-        soup = BeautifulSoup(response.text, 'html.parser')
-        cards = []  # List to hold card information
+# Function to log into Ticketmaster and transfer tickets
+def transfer_tickets(email, password, recipient_email):
+    # Placeholder for Ticketmaster login and ticket transfer logic
+    login_url = "https://www.ticketmaster.com/login"
+    transfer_url = "https://www.ticketmaster.com/transfer"
+
+    # Simulate login
+    session = requests.Session()
+    payload = {'email': email, 'password': password}
+    session.post(login_url, data=payload)
+
+    # Simulate ticket transfer
+    transfer_payload = {'recipient_email': recipient_email}
+    response = session.post(transfer_url, data=transfer_payload)
+
+    return response.status_code
+
+# Command to start the bot
+def start(update, context):
+    update.message.reply_text('Welcome! Please send your email:password and the recipient email.')
+
+# Function to handle messages
+def handle_message(update, context):
+    try:
+        email_password, recipient_email = update.message.text.split(';')
+        email, password = email_password.split(':')
         
-        # Assuming the cards are in a specific HTML structure
-        for card in soup.find_all('div', class_='card-info'):  # Adjust class name as necessary
-            card_type = card.find('span', class_='card-type').text  # Adjust selector as necessary
-            last4 = card.find('span', class_='last4').text  # Adjust selector as necessary
-            cards.append({'type': card_type, 'last4': last4})
+        # Retrieve tickets before transferring
+        tickets = get_tickets(email, password)
+        if tickets is None:
+            update.message.reply_text('Failed to retrieve tickets. Please check your credentials.')
+            return
         
-        if cards:
-            card_list = "\n".join([f"{card['type']} ending in {card['last4']}" for card in cards])
-            bot.send_message(message.chat.id, f"Your saved cards:\n{card_list}\nPlease enter your food order.")
-            bot.register_next_step_handler(message, order_food, session)
+        # Display available tickets
+        ticket_list = "\n".join([f"{ticket['name']} - {ticket['date']}" for ticket in tickets])
+        update.message.reply_text(f'Available tickets:\n{ticket_list}')
+        
+        # Proceed with ticket transfer
+        status_code = transfer_tickets(email, password, recipient_email)
+        
+        if status_code == 200:
+            update.message.reply_text('Tickets transferred successfully!')
         else:
-            bot.send_message(message.chat.id, "No saved cards found.")
-    else:
-        bot.send_message(message.chat.id, "Could not retrieve your cards.")
+            update.message.reply_text('Failed to transfer tickets. Please check your credentials.')
+    except Exception as e:
+        update.message.reply_text('Error: ' + str(e))
 
-def order_food(message, session):
-    food_order = message.text
-    bot.send_message(message.chat.id, "Please enter your delivery address.")
-    bot.register_next_step_handler(message, delivery_address, session, food_order)
+# Main function to run the bot
+def main():
+    # Replace 'YOUR_TOKEN' with your actual Telegram bot token
+    updater = Updater('YOUR_TOKEN', use_context=True)
+    dp = updater.dispatcher
 
-def delivery_address(message, session, food_order):
-    address = message.text
-    bot.send_message(message.chat.id, f"You ordered: {food_order}\nDelivery address: {address}\nDo you want to proceed with the order? (yes/no)")
-    bot.register_next_step_handler(message, confirm_order, session, food_order, address)
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 
-def confirm_order(message, session, food_order, address):
-    if message.text.lower() == 'yes':
-        card_type = 'Visa'  # Example card type
-        card_number = '0000' if card_type in ['Visa', 'MasterCard'] else '0000'
-        
-        order_url = 'https://subway.com/api/order'
-        order_data = {
-            'food_order': food_order,
-            'delivery_address': address,
-            'card_number': card_number
-        }
-        
-        response = session.post(order_url, json=order_data)
-        
-        if response.status_code == 200:
-            bot.send_message(message.chat.id, "Your order has been placed successfully!")
-        else:
-            bot.send_message(message.chat.id, "There was an error placing your order.")
-    else:
-        bot.send_message(message.chat.id, "Order canceled.")
+    updater.start_polling()
+    updater.idle()
 
-bot.polling()
+if __name__ == '__main__':
+    main()
