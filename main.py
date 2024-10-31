@@ -1,7 +1,7 @@
 # Telegram Bot Script for Ticket Transfer
 
 import telegram
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext import Updater, CommandHandler, MessageHandler, filters
 import requests
 
 # Function to log into Ticketmaster and retrieve tickets
@@ -74,7 +74,7 @@ def handle_message(update, context):
 # Main function to run the bot
 def main():
     # Replace 'YOUR_TOKEN' with your actual Telegram bot token
-    updater = Updater('YOUR_TOKEN', use_context=True)
+    updater = Updater('7297098002:AAGaCltHCKy-9PCZEiBDeyKW7nm4lw0oT6U', use_context=True)
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler("start", start))
